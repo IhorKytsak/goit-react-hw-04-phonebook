@@ -1,9 +1,8 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 const Filter = ({ onChangeFilter }) => {
   const setFilterValue = event => {
-    const value = event.currentTarget.value.toUpperCase();
+    const value = event.target.value.toLowerCase();
 
     onChangeFilter(value);
   };

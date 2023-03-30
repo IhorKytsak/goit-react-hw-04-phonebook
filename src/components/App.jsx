@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 
 import ContactForm from './ContactForm/ContactForm';
@@ -7,78 +7,57 @@ import ContactList from './ContactList/ContactList';
 import {
   getlocalStorageData,
   setlocalStorageData,
+  LSItem,
 } from '../utils/local-storage';
 
-const App = () => {
-  const initState = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+const INIT_CONTACTS = [
+  { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+  { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+  { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+  { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+];
 
-  const [state, setState] = useState(initState);
+const App = () => {
+  const [contacts, setContacts] = useState(
+    getlocalStorageData(LSItem) ?? INIT_CONTACTS
+  );
+  const [filter, setFilter] = useState('');
 
   useEffect(() => {
-    const contactsFromLS = getlocalStorageData();
+    setlocalStorageData(LSItem, contacts);
+  }, [contacts]);
 
-    if (contactsFromLS) {
-      setState(prevState => ({
-        ...prevState,
-        contacts: contactsFromLS,
-      }));
-    }
-  }, []);
+  const formSubmitHandler = (name, number) => {
+    const isNameAlreadyExist = contacts.some(contact => contact.name === name);
 
-  const formSubmitHandler = newContactData => {
-    const contactNames = state.contacts.map(contact => contact.name);
+    if (isNameAlreadyExist) {
+      alert(`'${name}' is in contacts already.`);
 
-    if (!contactNames.includes(newContactData.name)) {
-      const extendedContacts = [
-        ...state.contacts,
-        {
-          id: nanoid(),
-          name: newContactData.name,
-          number: newContactData.number,
-        },
-      ];
-
-      setState(prevState => ({
-        ...prevState,
-        contacts: extendedContacts,
-      }));
-
-      setlocalStorageData(extendedContacts);
+      return;
     } else {
-      alert(`${newContactData.name} is already in contacts.`);
+      const newContact = {
+        id: nanoid(),
+        name,
+        number,
+      };
+
+      setContacts(prevContacts => [newContact, ...prevContacts]);
     }
   };
 
-  const deleteContactHandler = deletedContactId => {
-    const updatedContacts = state.contacts.filter(
-      contact => contact.id !== deletedContactId
+  const deleteContactHandler = contactId => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== contactId)
     );
-    setState(prevState => ({
-      ...prevState,
-      contacts: [...updatedContacts],
-    }));
-
-    setlocalStorageData(updatedContacts);
   };
 
-  const changeFilterHandler = filterData => {
-    setState(prevState => ({
-      ...prevState,
-      filter: `${filterData}`,
-    }));
+  const changeFilterHandler = filterValue => {
+    setFilter(filterValue);
   };
 
-  const filteredArray = contacts => {
+  const filteredContacts = () => {
     return contacts.filter(contact =>
-      contact.name.toUpperCase().includes(state.filter)
+      contact.name.toLowerCase().includes(filter)
     );
   };
 
@@ -89,7 +68,7 @@ const App = () => {
       <h2>Contacts</h2>
       <Filter onChangeFilter={changeFilterHandler} />
       <ContactList
-        contacts={filteredArray(state.contacts)}
+        contacts={filteredContacts()}
         onDelete={deleteContactHandler}
       />
     </div>
